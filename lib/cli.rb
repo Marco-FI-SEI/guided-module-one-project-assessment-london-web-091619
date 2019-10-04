@@ -45,6 +45,7 @@ class CLI
   def good_bye
     system("clear")
     puts " Thank you for visiting K&M Gelato! Come back soon!\n"
+    status_change
   end
 
   #--------------------------------------------------------------------------------------------------------#
@@ -84,12 +85,18 @@ class CLI
   # ORDERS #
   #--------------------------------------------------------------------------------------------------------#
 
+  def status_change
+    pending_orders.each do |order|
+      order.status = "completed"
+      order.save
+    end
+  end
+
   def create_order
     servings = @@prompt.ask(" How many servings would you like? ")
     if servings_valid?(servings.to_i)
       total = servings.to_f * 5.0
-      Order.create(user_id: @current_user.id, gelato_id: get_gelato(1).id, order_time: order_timestamp,
-                   status: "pending", total: total, servings: servings)
+      order = Order.create(user_id: @current_user.id, gelato_id: get_gelato(1).id, order_time: order_timestamp, status: "pending", total: total, servings: servings)
       remove_stock(servings, get_gelato(1).id)
       stock_control(servings, get_gelato(1).id)
 
@@ -149,11 +156,15 @@ class CLI
   end
 
   def display_orders(orders)
-    puts "\n Your orders:\n"
-    orders.each_with_index do |order, index|
-      puts "#{index + 1}: #{order.servings} servings of #{get_gelato(order.gelato_id).flavour} at #{order.order_time}. Order total was: £#{order.total}"
+    if orders.empty?
+      puts "\n You do not have any orders to choose from...\n"
+    else
+      puts "\n Your orders:\n"
+      orders.each_with_index do |order, index|
+        puts "#{index + 1}: #{order.servings} servings of #{get_gelato(order.gelato_id).flavour} at #{order.order_time}. Order total was: £#{order.total}"
+      end
+      puts "\n"
     end
-    puts "\n"
   end
 
   def orders_selection
